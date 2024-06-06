@@ -44,26 +44,25 @@ process bowtie2_align {
 picard_MarkDuplicates{
     cpus 8
     tag {library}
-    conda "bioconda::"
+    conda "bioconda::picard=3.1.1"
     publishDir "${library}/"
 
     input:
     tuple val(library),
-          path(read1),
-          path(read2)
+          path(bam),
 
     output:
     tuple val(library), 
-          path("*R1.ds.fastq"),
-          path("*R2.ds.fastq")
+          path("*md.bam")
 
     shell:
     '''
-
-    bowtie2  -p !{params.cpus}
-             -x '/cvmfs/data.galaxyproject.org/byhand/CHM13_T2T_v2.0/bowtie2_index/CHM13_T2T_v2.0/CHM13_T2T_v2.0'   
-             -1 'input_f.fastq' -2 'input_r.fastq' | \
-             samtools sort --no-PG -@${GALAXY_SLOTS:-2} -T "${TMPDIR:-.}" -O bam -o output.bam
-
+    _JAVA_OPTIONS="-Xmx2048m -Xms256m" 
+    export _JAVA_OPTIONS && \
+    picard MarkDuplicates  --INPUT !{bam} --OUTPUT !{library}.md.bam  \
+    --METRICS_FILE !{library}.md.txt  --REMOVE_DUPLICATES true --ASSUME_SORTED true  \
+    --DUPLICATE_SCORING_STRATEGY SUM_OF_BASE_QUALITIES  \
+    --OPTICAL_DUPLICATE_PIXEL_DISTANCE "100"   --VALIDATION_STRINGENCY LENIENT \
+    --TAGGING_POLICY All --QUIET true --VERBOSITY ERROR
     '''
 }
