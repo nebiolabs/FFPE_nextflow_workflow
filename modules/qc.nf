@@ -1,4 +1,4 @@
-samtools_flagstat{
+process samtools_flagstat{
     cpus 8
     tag {library}
     conda "bioconda::samtools=1.15.1"
@@ -19,7 +19,7 @@ samtools_flagstat{
 }
 
 
-picard_CollectGcBiasMetrics{
+process picard_CollectGcBiasMetrics{
     cpus 8
     tag {library}
     conda "bioconda::picard=3.1.1"
@@ -40,12 +40,12 @@ picard_CollectGcBiasMetrics{
     picard CollectGcBiasMetrics  --INPUT !{bam} --OUTPUT !{library}.gcbias.out  \
     --CHART_OUTPUT !{library}.gc_chart.pdf --SUMMARY_OUTPUT !{library}.gc_summary.out \
     --WINDOW_SIZE 100 --MINIMUM_GENOME_FRACTION 5e-05 --IS_BISULFITE_SEQUENCED true \
-    --REFERENCE_SEQUENCE !{params.genome} --ASSUME_SORTED true  --VALIDATION_STRINGENCY LENIENT \
+    --REFERENCE_SEQUENCE !{params.genome_fasta} --ASSUME_SORTED true  --VALIDATION_STRINGENCY LENIENT \
     --QUIET true --VERBOSITY ERROR
     '''
 }
 
-picard_CollectAlignmentSummaryMetrics{
+process picard_CollectAlignmentSummaryMetrics{
     cpus 8
     tag {library}
     conda "bioconda::picard=3.1.1"
@@ -63,14 +63,14 @@ picard_CollectAlignmentSummaryMetrics{
     '''
     _JAVA_OPTIONS="-Xmx2048m -Xms256m" 
     export _JAVA_OPTIONS && \
-    picard CollectAlignmentSummaryMetrics --INPUT !{ban} --OUTPUT !{library}.alignment_summary.out \
+    picard CollectAlignmentSummaryMetrics --INPUT !{bam} --OUTPUT !{library}.alignment_summary.out \
     --MAX_INSERT_SIZE 100000 --METRIC_ACCUMULATION_LEVEL ALL_READS --IS_BISULFITE_SEQUENCED false  \
-    --REFERENCE_SEQUENCE !{params.genome}  --ASSUME_SORTED true  --VALIDATION_STRINGENCY LENIENT \
+    --REFERENCE_SEQUENCE !{params.genome_fasta}  --ASSUME_SORTED true  --VALIDATION_STRINGENCY LENIENT \
     --QUIET true --VERBOSITY ERROR
     '''
 }
 
-picard_EstimateLibraryComplexity {
+process picard_EstimateLibraryComplexity {
     cpus 8
     tag {library}
     conda "bioconda::picard=3.1.1"
@@ -95,7 +95,7 @@ picard_EstimateLibraryComplexity {
     '''
 }
 
-picard_CollectAlignmentSummaryMetrics { 
+process picard_CollectInsertSizeMetrics {
     cpus 8
     tag {library}
     conda "bioconda::picard=3.1.1"
@@ -106,21 +106,25 @@ picard_CollectAlignmentSummaryMetrics {
           path(bam)
 
     output:
-    tuple val(library), 
-          path("*insert_size_metrics.out")
+    tuple val(library),
+          path("*insert_size_metrics.out"),
+          emit: for_multiqc
+
+    tuple val(library),
+          path("histogram.txt"),
+          emit: other_data
 
     shell:
     '''
-    _JAVA_OPTIONS="-Xmx2048m -Xms256m" 
+    _JAVA_OPTIONS="-Xmx2048m -Xms256m"
     export _JAVA_OPTIONS && \
-    picard CollectInsertSizeMetrics --INPUT !{bam} --OUTPUT !{library}.insert_size_metrics.out \
-    --Histogram_FILE !{library}.insert_size_hist.out --DEVIATIONS 10.0   --MINIMUM_PCT 0.05 \
-    --REFERENCE_SEQUENCE !{params.genome} --ASSUME_SORTED true --METRIC_ACCUMULATION_LEVEL ALL_READS  \
-    --VALIDATION_STRINGENCY LENIENT --QUIET true --VERBOSITY ERROR
+    picard CollectInsertSizeMetrics --INPUT !{bam} --OUTPUT !{library}.insert_size_metrics.out --Histogram_FILE histogram.txt \
+    --DEVIATIONS 10.0 --MINIMUM_PCT 0.05 --REFERENCE_SEQUENCE !{params.genome_fasta} --ASSUME_SORTED true \
+    --METRIC_ACCUMULATION_LEVEL ALL_READS  --VALIDATION_STRINGENCY LENIENT --QUIET true --VERBOSITY ERROR
     '''
 }
 
-fastqc { 
+process fastqc { 
     cpus 8
     tag {library}
     conda "bioconda::fastqc=0.12.1"
@@ -132,7 +136,7 @@ fastqc {
 
     output:
     tuple val(library), 
-          path("*output.txt ")
+          path("*output.txt")
 
     shell:
     '''
@@ -141,11 +145,11 @@ fastqc {
     mkdir fastqc_tmp_dir
     fastqc --outdir fastqc_tmp_dir --threads !{task.cpus} --quiet --extract  --kmers 7 -f bam !{bam}  \
     && cp fastqc_tmp_dir/*/fastqc_data.txt !{library}.fastqc.output.txt \
-    && cp fastqc_tmp_dir/*\.html !{library}.fastqc.output.html
+    && cp fastqc_tmp_dir/*.html !{library}.fastqc.output.html
     '''
 }
 
-bedtools_genome_coverage { 
+process bedtools_genome_coverage { 
     cpus 8
     tag {library}
     conda "bioconda::bedtools=2.30"
@@ -166,7 +170,7 @@ bedtools_genome_coverage {
     bedtools genomecov -ibam !{bam} -max 100000 > !{library}.bed
     '''
 }
-multiqc { 
+process multiqc { 
     cpus 8
     tag {library}
     conda "bioconda::multiqc=1.11"
@@ -197,7 +201,7 @@ multiqc {
     ln -s !{fastqc} multiqc_WDir/fastqc_1/data_0/file_0/ && \
     mkdir multiqc_WDir/picard_2 && \
     mkdir multiqc_WDir/picard_2/markdups_0 && \
-    ln -s !{markduplicates} multiqc_WDir/picard_2/markdups_0/  && \
+    ln -s !{markdup} multiqc_WDir/picard_2/markdups_0/  && \
     mkdir multiqc_WDir/picard_3 && \
     mkdir multiqc_WDir/picard_3/insertsize_0 && \
     ln -s !{insertsize} multiqc_WDir/picard_3/insertsize_0/  && \

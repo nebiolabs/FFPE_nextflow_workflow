@@ -8,7 +8,7 @@ process bowtie2_create_index {
 
     output:
     // nf-core use the name of the path as index though...
-    path("*.bt2", emit: 'index')
+    path("*.bt2")
 
     shell:
     '''
@@ -35,13 +35,15 @@ process bowtie2_align {
 
     shell:
     '''
-    bowtie2  -p !{params.cpus} -x !{index} -1 read1 -2 read2 \
+    INDEX=$(find -L !{index} -name "*.1.bt2" | sed 's/\\.1.bt2\$//' | grep -v "rev")
+
+    bowtie2  -p !{task.cpus} -x $INDEX -1 !{read1} -2 !{read2} \
     | samtools sort --no-PG -@!{task.cpus} -T !{params.temporary_path} \
                     -O bam -o !{library}.sorted.bam
     '''
 }
 
-picard_MarkDuplicates{
+process picard_MarkDuplicates{
     cpus 8
     tag {library}
     conda "bioconda::picard=3.1.1"
@@ -49,7 +51,7 @@ picard_MarkDuplicates{
 
     input:
     tuple val(library),
-          path(bam),
+          path(bam)
 
     output:
     tuple val(library), 

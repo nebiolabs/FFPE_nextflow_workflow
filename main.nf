@@ -13,9 +13,9 @@ params.genome_fasta = null
 //}
 
 
-include { seqtk_sample } from './modules/preprocessing'
+include { seqtk_sample; fastp } from './modules/preprocessing'
 include { bowtie2_create_index; bowtie2_align; picard_MarkDuplicates } from './modules/aligners'
-include { samtools_flagstal; picard_CollectGcBiasMetrics; picard_CollectAlignmentSummaryMetrics; picard_EstimateLibraryComplexity; picard_CollectAlignmentSummaryMetrics; fastqc; bedtools_genome_coverage; multiqc } from  './modules/qc'
+include { samtools_flagstat; picard_CollectGcBiasMetrics; picard_EstimateLibraryComplexity; picard_CollectAlignmentSummaryMetrics; picard_CollectInsertSizeMetrics; fastqc; bedtools_genome_coverage; multiqc } from  './modules/qc'
 
 input_channel = channel.fromFilePairs(params.input_glob)
                        .map {n -> [library: n[0], read1: n[1][0], read2: n[1][1]]}
@@ -23,33 +23,33 @@ input_channel = channel.fromFilePairs(params.input_glob)
 workflow {
     // Preprocessing
     seqtk_done = seqtk_sample(input_channel)
-    fastp_done = fastp(seqtk_done.out)
+    fastp_done = fastp(seqtk_done)
     
     // Alignment
-    bowtie2_index_done = params.bowtie2_index == null ? bowtie2_create_index() : params.bowtie2_index
+    bowtie2_index_done = params.bowtie2_index == null ? bowtie2_create_index() : channel.fromPath(params.bowtie2_index)
 
-    bowtie2_input_channel                   = fastp_done.out.combine(bowtie2_index_done.index)
+    bowtie2_input_channel                   = fastp_done.combine(bowtie2_index_done)
     bowtie2_done                            = bowtie2_align(bowtie2_input_channel)
-    markduplicates_done                     = picard_MarkDuplicates(bowtie2_done.out)
+    markduplicates_done                     = picard_MarkDuplicates(bowtie2_done)
     
     // bedfile
-    bedtools_done                           = bedtools_genome_coverage(markduplicates_done.out.bam)
+    bedtools_done                           = bedtools_genome_coverage(markduplicates_done)
 
     // Quality control
     flagstats_done                          = samtools_flagstat(markduplicates_done)
     gcbias_done                             = picard_CollectGcBiasMetrics(markduplicates_done)
     align_summary_done                      = picard_CollectAlignmentSummaryMetrics(markduplicates_done)
-    etimater_complexity_done                = picard_EstimateLibraryComplexity(markduplicates_done)       
+    estimate_complexity_done                = picard_EstimateLibraryComplexity(markduplicates_done)       
     insert_size_done                        = picard_CollectInsertSizeMetrics(markduplicates_done)
-    fastqc_done                             = fastqc(markduplicates_done.out)
+    fastqc_done                             = fastqc(markduplicates_done)
 
     // MultiQC
-    multiqc_ch = flagstats_done.out
-        .join(fastqc_done.out)
-        .join(markduplicates_done.out)
-        .join(insert_size_done.out)
-        .join(gcbias_done.out)
-        .join(align_summary_done.out)
+    multiqc_ch = flagstats_done.groupTuple(by: [0, 1])
+        .join(fastqc_done.groupTuple(by: [0, 1]))
+        .join(markduplicates_done.groupTuple(by: [0, 1]))
+        .join(insert_size_done.for_multiqc.groupTuple(by: [0, 1]))
+        .join(gcbias_done.groupTuple(by: [0, 1]))
+        .join(align_summary_done.groupTuple(by: [0, 1]))
 
     multiqc_done                            = multiqc(multiqc_ch)
 }

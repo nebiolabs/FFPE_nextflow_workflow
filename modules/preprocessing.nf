@@ -16,8 +16,8 @@ process seqtk_sample {
 
     shell:
     '''
-    seqtk sample -s!{params.random_seed} !{read1} params.downsample > !{library}_R1_.ds.fastq &
-    seqtk sample -s!{params.random_seed} !{read2} params.downsample > !{library}_R2_.ds.fastq &
+    seqtk sample -s!{params.random_seed} !{read1} !{params.downsample} > !{library}_R1.ds.fastq &
+    seqtk sample -s!{params.random_seed} !{read2} !{params.downsample} > !{library}_R2.ds.fastq &
     wait
     '''
 }
@@ -40,12 +40,12 @@ process fastp {
 
     shell:
     '''
-    fastp --thread !{task.cpus} 
-          --report_title 'fastp report for !{library}' 
-          -i ${read1}
-          -o !{library}.R1.fastq
-          -I !{read2} 
-          -O !{library}.R2.fastq 
+    fastp --thread !{task.cpus} \
+          --report_title 'fastp report for !{library}' \
+          -i !{read1} \
+          -o !{library}.R1.ds.trimmed.fastq \
+          -I !{read2} \
+          -O !{library}.R2.ds.trimmed.fastq \
           --detect_adapter_for_pe 
 
     '''
