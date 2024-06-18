@@ -187,30 +187,10 @@ process multiqc {
 
     output:
     tuple val(library), 
-          path("*.multiqc.report")
+          path("*.multiqc.report_data")
 
     shell:
     '''
-    mkdir multiqc_WDir && \
-    mkdir multiqc_WDir/samtools_0 && \
-    mkdir multiqc_WDir/samtools_0/flagstat_0 && \
-    ln -s !{flagstat} multiqc_WDir/samtools_0/flagstat_0/  && \
-    mkdir multiqc_WDir/fastqc_1 && \
-    mkdir multiqc_WDir/fastqc_1/data_0 && \
-    mkdir multiqc_WDir/fastqc_1/data_0/file_0 && \
-    ln -s !{fastqc} multiqc_WDir/fastqc_1/data_0/file_0/ && \
-    mkdir multiqc_WDir/picard_2 && \
-    mkdir multiqc_WDir/picard_2/markdups_0 && \
-    ln -s !{markdup} multiqc_WDir/picard_2/markdups_0/  && \
-    mkdir multiqc_WDir/picard_3 && \
-    mkdir multiqc_WDir/picard_3/insertsize_0 && \
-    ln -s !{insertsize} multiqc_WDir/picard_3/insertsize_0/  && \
-    mkdir multiqc_WDir/picard_4 && \
-    mkdir multiqc_WDir/picard_4/gcbias_0 && \
-    ln -s !{gcbias} multiqc_WDir/picard_4/gcbias_0/  && \
-    mkdir multiqc_WDir/picard_5 && \
-    mkdir multiqc_WDir/picard_5/alignment_metrics_0 && \
-    ln -s !{alignmentsummary} multiqc_WDir/picard_5/alignment_metrics_0/ && \
-    multiqc multiqc_WDir --filename !{library}.multiqc.report
+    multiqc . --filename !{library}.multiqc.report
     '''
 }
