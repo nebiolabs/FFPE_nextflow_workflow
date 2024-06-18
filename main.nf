@@ -15,7 +15,7 @@ params.genome_fasta = null
 
 include { seqtk_sample; fastp } from './modules/preprocessing'
 include { bowtie2_create_index; bowtie2_align; picard_MarkDuplicates } from './modules/aligners'
-include { samtools_flagstat; picard_CollectGcBiasMetrics; picard_EstimateLibraryComplexity; picard_CollectAlignmentSummaryMetrics; picard_CollectInsertSizeMetrics; fastqc; bedtools_genome_coverage; multiqc } from  './modules/qc'
+include { samtools_flagstat; picard_CollectGcBiasMetrics; picard_EstimateLibraryComplexity; picard_CollectAlignmentSummaryMetrics; picard_CollectInsertSizeMetrics; fastqc; bedtools_genome_coverage; multiqc; tasmanian } from  './modules/qc'
 
 input_channel = channel.fromFilePairs(params.input_glob)
                        .map {n -> [library: n[0], read1: n[1][0], read2: n[1][1]]}
@@ -52,4 +52,5 @@ workflow {
         .join(align_summary_done.groupTuple(by: [0, 1]))
 
     multiqc_done                            = multiqc(multiqc_ch)
-}
+    tasmanian_done                          = tasmanian(markduplicates_done)
+}   

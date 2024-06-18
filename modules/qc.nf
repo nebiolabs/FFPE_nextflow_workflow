@@ -170,6 +170,7 @@ process bedtools_genome_coverage {
     bedtools genomecov -ibam !{bam} -max 100000 > !{library}.bed
     '''
 }
+
 process multiqc { 
     cpus 8
     tag {library}
@@ -192,5 +193,30 @@ process multiqc {
     shell:
     '''
     multiqc . --filename !{library}.multiqc.report
+    '''
+}
+
+process tasmanian {
+    cpus 8
+    tag {library}
+    conda "bioconda::tasmanian-mismatch=1.0.7 bioconda::samtools=1.13"
+    publishDir "${library}/"
+
+    input:
+    tuple val(library),
+          path(bam)
+
+    output:
+    tuple val(library),
+          path("*.html"),
+          emit: html
+
+    tuple val(library),
+          path("*.csv"),
+          emit: table
+
+    shell:
+    '''
+    samtools view !{bam} | run_tasmanian -r !{params.genome_fasta} > !{library}.tasmanian.output.csv
     '''
 }
