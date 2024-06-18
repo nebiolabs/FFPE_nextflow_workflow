@@ -13,8 +13,9 @@ params.genome_fasta = null
 //}
 
 
-include { seqtk_sample; mergeAndMarkDuplicates } from './modules/preprocessing'
-include { bowtie2_create_index, bowtie2_align } from './modules/aligners'
+include { seqtk_sample } from './modules/preprocessing'
+include { bowtie2_create_index; bowtie2_align; picard_MarkDuplicates } from './modules/aligners'
+include { samtools_flagstal; picard_CollectGcBiasMetrics; picard_CollectAlignmentSummaryMetrics; picard_EstimateLibraryComplexity; picard_CollectAlignmentSummaryMetrics; fastqc; bedtools_genome_coverage; multiqc } from  './modules/qc'
 
 input_channel = channel.fromFilePairs(params.input_glob)
                        .map {n -> [library: n[0], read1: n[1][0], read2: n[1][1]]}
@@ -49,5 +50,6 @@ workflow {
         .join(insert_size_done.out)
         .join(gcbias_done.out)
         .join(align_summary_done.out)
+
     multiqc_done                            = multiqc(multiqc_ch)
 }
