@@ -1,5 +1,5 @@
 process seqtk_sample {
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::seqtk=1.4"
     publishDir "${library}/"
@@ -23,7 +23,7 @@ process seqtk_sample {
 }
 
 process fastp {
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::fastp=0.23.2"
     publishDir "${library}/"

@@ -2,7 +2,7 @@ process bowtie2_create_index {
     tag {"creating index"}
     conda "bioconda:bowtie2=2.5.3"
     publishDir "reference_bowtie2_index/"
-    cpus 24
+    cpus 4
 
     input:
         path(genome_fasta)
@@ -20,7 +20,7 @@ process bowtie2_create_index {
 }
 
 process bowtie2_align {
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda:bowtie2=2.5.3 bioconda:samtools=1.19.2"
     publishDir "${library}/"
@@ -48,7 +48,7 @@ process bowtie2_align {
 }
 
 process picard_MarkDuplicates{
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::picard=3.1.1"
     publishDir "${library}/"
