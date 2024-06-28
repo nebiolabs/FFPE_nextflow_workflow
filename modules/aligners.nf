@@ -1,10 +1,11 @@
 process bowtie2_create_index {
     tag {"creating index"}
     conda "bioconda:bowtie2=2.5.3"
-    publishDir "${bt2_index}/"
+    publishDir "reference_bowtie2_index/"
+    cpus 4
 
     input:
-    path(genome_fasta)
+        path(genome_fasta)
 
     output:
     // nf-core use the name of the path as index though...
@@ -12,13 +13,14 @@ process bowtie2_create_index {
 
     shell:
     '''
-    index_name=$(basename !{params.genome_fasta} | cut -f 1 -d '.')
-    bowtie2-build !{params.genome_fasta} ${index_name}
+    index_name=$(basename !{genome_fasta} | awk -F"/" '{print $NF}'| cut -f 1 -d '.')
+    bowtie2-build --threads !{task.cpus} !{genome_fasta} ${index_name}
+    # touch testing.1.bt2 testing.2.bt2 testing.3.bt2
     '''
 }
 
 process bowtie2_align {
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda:bowtie2=2.5.3 bioconda:samtools=1.19.2"
     publishDir "${library}/"
@@ -26,8 +28,8 @@ process bowtie2_align {
     input:
     tuple val(library),
           path(read1),
-          path(read2),
-          path(index)
+          path(read2)
+    path(index)
 
     output:
     tuple val(library), 
@@ -35,6 +37,8 @@ process bowtie2_align {
 
     shell:
     '''
+    echo !{index}    
+
     INDEX=$(find -L !{index} -name "*.1.bt2" | sed 's/\\.1.bt2\$//' | grep -v "rev")
 
     bowtie2  -p !{task.cpus} -x $INDEX -1 !{read1} -2 !{read2} \
@@ -44,7 +48,7 @@ process bowtie2_align {
 }
 
 process picard_MarkDuplicates{
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::picard=3.1.1"
     publishDir "${library}/"

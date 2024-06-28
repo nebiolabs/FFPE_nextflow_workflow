@@ -26,10 +26,10 @@ workflow {
     fastp_done = fastp(seqtk_done)
     
     // Alignment
-    bowtie2_index_done = params.bowtie2_index == null ? bowtie2_create_index() : channel.fromPath(params.bowtie2_index)
+    genome_channel = channel.fromPath(params.genome_fasta)
+    bowtie2_index_done = params.bowtie2_index == null ? bowtie2_create_index(genome_channel) : channel.fromPath(params.bowtie2_index)
 
-    bowtie2_input_channel                   = fastp_done.combine(bowtie2_index_done)
-    bowtie2_done                            = bowtie2_align(bowtie2_input_channel)
+    bowtie2_done                            = bowtie2_align(fastp_done, bowtie2_index_done)
     markduplicates_done                     = picard_MarkDuplicates(bowtie2_done)
     
     // bedfile

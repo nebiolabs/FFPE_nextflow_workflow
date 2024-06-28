@@ -1,5 +1,5 @@
 process samtools_flagstat{
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::samtools=1.15.1"
     publishDir "${library}/"
@@ -20,7 +20,7 @@ process samtools_flagstat{
 
 
 process picard_CollectGcBiasMetrics{
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::picard=3.1.1"
     publishDir "${library}/"
@@ -46,7 +46,7 @@ process picard_CollectGcBiasMetrics{
 }
 
 process picard_CollectAlignmentSummaryMetrics{
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::picard=3.1.1"
     publishDir "${library}/"
@@ -71,7 +71,7 @@ process picard_CollectAlignmentSummaryMetrics{
 }
 
 process picard_EstimateLibraryComplexity {
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::picard=3.1.1"
     publishDir "${library}/"
@@ -96,7 +96,7 @@ process picard_EstimateLibraryComplexity {
 }
 
 process picard_CollectInsertSizeMetrics {
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::picard=3.1.1"
     publishDir "${library}/"
@@ -125,7 +125,7 @@ process picard_CollectInsertSizeMetrics {
 }
 
 process fastqc { 
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::fastqc=0.12.1"
     publishDir "${library}/"
@@ -150,7 +150,7 @@ process fastqc {
 }
 
 process bedtools_genome_coverage { 
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::bedtools=2.30"
     publishDir "${library}/"
@@ -172,7 +172,7 @@ process bedtools_genome_coverage {
 }
 
 process multiqc { 
-    cpus 8
+    cpus 4
     tag {library}
     conda "bioconda::multiqc=1.11"
     publishDir "${library}/"
@@ -197,7 +197,7 @@ process multiqc {
 }
 
 process tasmanian {
-    cpus 8
+    cpus 1
     tag {library}
     conda "bioconda::tasmanian-mismatch=1.0.7 bioconda::samtools=1.13"
     publishDir "${library}/"
